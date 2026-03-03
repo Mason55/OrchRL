@@ -1,1 +1,2 @@
 # OrchRL
+OrchRL is an open-source, agent-oriented reinforcement learning framework. It enables the rapid integration of various complex agents without requiring any knowledge of their internal workflows. OrchRL significantly boosts RL training performance through the asynchronous execution of tasks—including training, inference, and tool invocation—along with accelerated data transmission between these tasks. Notably, OrchRL features hardware-native performance optimizations specifically tailored for Huawei Ascend processors.
