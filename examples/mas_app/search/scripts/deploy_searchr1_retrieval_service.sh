@@ -4,9 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOWNLOAD_SCRIPT="${SCRIPT_DIR}/searchr1_download.py"
 RETRIEVAL_SERVER_SCRIPT="${SCRIPT_DIR}/retrieval_server.py"
-LOCAL_DIR="${HOME}/data/searchR1"
+# LOCAL_DIR="${HOME}/data/searchR1"
+LOCAL_DIR="/data1/lll/datasets/wiki-18"
 CONDA_ENV="retriever"
-PORT="8000"
+PORT="8010"
 LOG_FILE="retrieval_server.log"
 SETUP_ENV="1"
 FORCE_ENV_SETUP="0"
@@ -128,20 +129,20 @@ fi
 mkdir -p "${LOCAL_DIR}"
 
 echo "[2/4] Downloading index and corpus to ${LOCAL_DIR}"
-python "${DOWNLOAD_SCRIPT}" --local_dir "${LOCAL_DIR}"
+# python "${DOWNLOAD_SCRIPT}" --local_dir "${LOCAL_DIR}"
 
 echo "[3/4] Building e5_Flat.index and extracting wiki-18 corpus"
-shopt -s nullglob
-parts=( "${LOCAL_DIR}"/part_* )
-if [[ ${#parts[@]} -eq 0 ]]; then
-  echo "No part_* files found under ${LOCAL_DIR}" >&2
-  exit 1
-fi
-cat "${parts[@]}" > "${LOCAL_DIR}/e5_Flat.index"
+# shopt -s nullglob
+# parts=( "${LOCAL_DIR}"/part_* )
+# if [[ ${#parts[@]} -eq 0 ]]; then
+#   echo "No part_* files found under ${LOCAL_DIR}" >&2
+#   exit 1
+# fi
+# cat "${parts[@]}" > "${LOCAL_DIR}/e5_Flat.index"
 
-if [[ -f "${LOCAL_DIR}/wiki-18.jsonl.gz" ]]; then
-  gzip -df "${LOCAL_DIR}/wiki-18.jsonl.gz"
-fi
+# if [[ -f "${LOCAL_DIR}/wiki-18.jsonl.gz" ]]; then
+#   gzip -df "${LOCAL_DIR}/wiki-18.jsonl.gz"
+# fi
 
 if [[ ! -f "${LOCAL_DIR}/wiki-18.jsonl" ]]; then
   echo "Corpus file missing: ${LOCAL_DIR}/wiki-18.jsonl" >&2
@@ -154,7 +155,7 @@ python "${RETRIEVAL_SERVER_SCRIPT}" \
   --corpus_path "${LOCAL_DIR}/wiki-18.jsonl" \
   --topk 3 \
   --retriever_name e5 \
-  --retriever_model intfloat/e5-base-v2 \
+  --retriever_model /data1/lll/models/e5-base-v2 \
   --faiss_gpu \
   --port "${PORT}" \
   > "${LOG_FILE}"
