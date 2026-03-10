@@ -9,7 +9,7 @@ lora_rank: 0
 lora_alpha: 16
 resource:
   nnodes: 1
-  n_gpus_per_node: 3
+  n_gpus_per_node: 8
   trust_remote_code: true
 env:
   name: search_env

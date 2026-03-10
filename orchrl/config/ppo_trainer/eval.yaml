@@ -341,35 +341,36 @@ critic:
   # Gradient clipping for critic updates
   grad_clip: 1.0
 
-reward_model:
-  enable: False
-  use_reward_loop: False
-  strategy: fsdp
-  model:
-    input_tokenizer: ~/models/deepseek-llm-7b-chat  # set this to null if the chat template is identical
-    path: ~/models/FsfairX-LLaMA3-RM-v0.1
-    use_shm: False
-    external_lib: null
-    use_remove_padding: False
-    use_fused_kernels: False
-    trust_remote_code: False
-    fsdp_config:
-      wrap_policy:
-        min_num_params: 0
-      param_offload: False
-      reshard_after_forward: True # only for fsdp2, [True, False, int between 1 and fsdp_size]
-      fsdp_size: -1
-  micro_batch_size: null # will be deprecated, use micro_batch_size_per_gpu
-  micro_batch_size_per_gpu: null # set a number
-  max_length: null
-  ulysses_sequence_parallel_size: 1 # sp size
-  use_dynamic_bsz: false  
-  forward_max_token_len_per_gpu: 32768
-  reward_manager: naive
-  launch_reward_fn_async: False # custom reward function executed async on CPU, during log_prob
-  sandbox_fusion:
-    url: null # faas url to run code in cloud sandbox
-    max_concurrent: 64 # max concurrent requests to sandbox
+reward:
+  reward_model:
+    enable: False
+    use_reward_loop: False
+    strategy: fsdp
+    model:
+      input_tokenizer: ~/models/deepseek-llm-7b-chat  # set this to null if the chat template is identical
+      path: ~/models/FsfairX-LLaMA3-RM-v0.1
+      use_shm: False
+      external_lib: null
+      use_remove_padding: False
+      use_fused_kernels: False
+      trust_remote_code: False
+      fsdp_config:
+        wrap_policy:
+          min_num_params: 0
+        param_offload: False
+        reshard_after_forward: True # only for fsdp2, [True, False, int between 1 and fsdp_size]
+        fsdp_size: -1
+    micro_batch_size: null # will be deprecated, use micro_batch_size_per_gpu
+    micro_batch_size_per_gpu: null # set a number
+    max_length: null
+    ulysses_sequence_parallel_size: 1 # sp size
+    use_dynamic_bsz: false
+    forward_max_token_len_per_gpu: 32768
+    reward_manager: naive
+    launch_reward_fn_async: False # custom reward function executed async on CPU, during log_prob
+    sandbox_fusion:
+      url: null # faas url to run code in cloud sandbox
+      max_concurrent: 64 # max concurrent requests to sandbox
 
 custom_reward_function:
   path: null

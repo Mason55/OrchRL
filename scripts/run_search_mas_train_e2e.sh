@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_DIR="$REPO_ROOT/orchrl/config/search"
 
 DEFAULT_CONFIG_NAME="search_mas_nosearch_external_5step_4x4_conservative"
-DEFAULT_CUDA_VISIBLE_DEVICES="3,4,5"
+DEFAULT_CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 DEFAULT_LOG_PATH="$REPO_ROOT/logs/search_mas_train_e2e_${TIMESTAMP}.log"
 

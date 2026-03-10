@@ -1,0 +1,8 @@
+# AKG Agents (install from local source)
+# pip install -e /path/to/akg/akg_agents --no-build-isolation
+akg-agents>=2.0.0
+
+# OrchRL trajectory library (install from local source)
+# pip install -e /path/to/OrchRL
+
+pyyaml>=6.0
