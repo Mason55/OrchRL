@@ -147,8 +147,8 @@ actor_rollout_ref:
     max_num_batched_tokens: 8192 #
     max_model_len: null  
     max_num_seqs: 64
-    log_prob_micro_batch_size: 4 # will be deprecated, use log_prob_micro_batch_size_per_gpu
-    log_prob_micro_batch_size_per_gpu: null
+    log_prob_micro_batch_size: null
+    log_prob_micro_batch_size_per_gpu: 1
     log_prob_use_dynamic_bsz: False
     log_prob_max_token_len_per_gpu: 24576
     disable_log_stats: True
