@@ -49,6 +49,7 @@ class MateRolloutAdapter:
         server_address_dict,
         role_policy_mapping,
         policy_server_name_mapping,
+        tokenizer_dict=None,
     ):
         self._config = _to_plain_dict(config)
         self._prompt_loader = prompt_loader
@@ -56,6 +57,7 @@ class MateRolloutAdapter:
         self._server_address_dict = server_address_dict
         self._role_policy_mapping = dict(role_policy_mapping)
         self._policy_server_name_mapping = dict(policy_server_name_mapping)
+        self._tokenizer_dict = tokenizer_dict or {}
         self._roles = list(self._config.get("roles", self._role_policy_mapping.keys()))
         sampling_cfg = self._config.get("sampling", {})
         self._batch_size = int(self._config.get("batch_size", sampling_cfg.get("n_prompts_per_step", 1)))
@@ -166,9 +168,13 @@ class MateRolloutAdapter:
         )
         if default_url is None:
             raise ValueError("no backend_url available for MATE rollout backend")
+        tokenizer = None
+        if self._tokenizer_dict:
+            tokenizer = next(iter(self._tokenizer_dict.values()), None)
         return VLLMBackend(
             backend_url=default_url,
             timeout=float(self._config.get("backend_timeout", self._config.get("timeout", 120.0))),
+            tokenizer=tokenizer,
         )
 
     def _select_backend_url(self, policy_name: str) -> str:

@@ -206,6 +206,7 @@ class MultiAgentsPPOTrainer:
             server_address_dict=self.server_address_dict,
             role_policy_mapping=self.mate_config["role_policy_mapping"],
             policy_server_name_mapping=self.policy_server_name_mapping,
+            tokenizer_dict=self.tokenizer_dict,
         )
 
     def _collect_mate_episodes(self, step_idx: int):
@@ -579,11 +580,14 @@ class MultiAgentsPPOTrainer:
         log_dir = os.path.join("logs", experiment_name, date_str, time_str)
         os.makedirs(log_dir, exist_ok=True)
         
+        resolved_config = OmegaConf.to_container(self.config, resolve=True)
+        if "trainer" not in resolved_config:
+            resolved_config["trainer"] = resolved_config.get("training", {})
         logger = Tracking(
             project_name=self.config.training.project_name,
             experiment_name=experiment_name,
             default_backend=self.config.training.logger,
-            config=OmegaConf.to_container(self.config, resolve=True),
+            config=resolved_config,
         )
         
         colorful_print(f"Logger initialized with log_dir: {log_dir}", "cyan")

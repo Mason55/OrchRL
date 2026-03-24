@@ -50,6 +50,7 @@ training:
   experiment_name: kernel_gen_level1_qwen3_4b
   logger:
   - console
+  - wandb
   model_checkpoints_dir: checkpoints/kernel_gen_level1_qwen3_4b
   ray_wait_register_center_timeout: 300
   train_batch_size: 4
@@ -57,8 +58,8 @@ training:
   validate_sample_num: 1
   sample_temperature: 0.6
   val_freq: 9999
-  max_prompt_length: 2048
-  max_response_length: 2048
+  max_prompt_length: 8192
+  max_response_length: 6144
   lora_rank: ${lora_rank}
   lora_alpha: ${lora_alpha}
   mate:
@@ -93,31 +94,54 @@ models:
       filter_method: uid
       filter_ratio: 0.0
       data:
-        max_prompt_length: 2048
-        max_response_length: 2048
+        max_prompt_length: 8192
+        max_response_length: 6144
+        train_files: /data1/lmy/agentic-rl/OrchRL/data/kernelbench_level1.json
+        val_files: /data1/lmy/agentic-rl/OrchRL/data/kernelbench_level1.json
+        filter_overlong_prompts: false
+      reward:
+        num_workers: 1
+        reward_manager:
+          name: naive
+          source: null
+          module:
+            path: null
+            name: null
+        custom_reward_function:
+          path: null
+          name: compute_score
       actor_rollout_ref:
         model:
+          _target_: verl.workers.config.model.HFModelConfig
           path: /data1/models/Qwen/Qwen3-4B-Instruct-2507
         actor:
-          ppo_mini_batch_size: 16
+          ppo_mini_batch_size: 8
           ppo_micro_batch_size: null
-          ppo_micro_batch_size_per_gpu: 2
-          ppo_max_token_len_per_gpu: 8192
+          ppo_micro_batch_size_per_gpu: 1
+          ppo_max_token_len_per_gpu: 14336
+          fsdp_config:
+            param_offload: true
+            optimizer_offload: true
         ref:
           log_prob_micro_batch_size: null
-          log_prob_micro_batch_size_per_gpu: 2
-          log_prob_max_token_len_per_gpu: 8192
+          log_prob_micro_batch_size_per_gpu: 1
+          log_prob_max_token_len_per_gpu: 14336
+          fsdp_config:
+            param_offload: true
         rollout:
           temperature: 0.6
-          prompt_length: 2048
-          response_length: 2048
+          prompt_length: 8192
+          response_length: 6144
           tensor_model_parallel_size: 1
           gpu_memory_utilization: 0.6
+          max_model_len: 16384
           max_num_batched_tokens: 8192
-          max_num_seqs: 32
+          max_num_seqs: 16
           enforce_eager: true
+          free_cache_engine: true
           log_prob_micro_batch_size: null
-          log_prob_micro_batch_size_per_gpu: 2
+          log_prob_micro_batch_size_per_gpu: 1
+          n_gpus_per_node: 8
         trainer:
           n_gpus_per_node: 8
           n_training_gpus_per_node: 8

@@ -60,22 +60,44 @@ class VLLMBackend(InferenceBackend):
         if isinstance(backend_url_override, str) and backend_url_override:
             target_backend_url = backend_url_override.rstrip("/")
 
+        _SAFE_PARAMS = {
+            "model", "messages", "temperature", "top_p", "top_k", "n",
+            "max_tokens", "max_completion_tokens", "stop", "stream",
+            "presence_penalty", "frequency_penalty", "logit_bias",
+            "logprobs", "top_logprobs", "seed", "user",
+            "repetition_penalty", "min_p", "min_tokens",
+        }
+        safe_gen = {k: v for k, v in generation_params.items() if k in _SAFE_PARAMS}
         payload: dict[str, Any] = {
             "messages": request.messages,
-            **generation_params,
+            **safe_gen,
         }
         payload["logprobs"] = True
-        payload["return_token_ids"] = True
+        payload["top_logprobs"] = 1
         if self.actual_model:
             payload["model"] = self.actual_model
         elif "model" not in payload:
             payload["model"] = request.agent_role
+
+        _MAX_COMPLETION_CAP = 6144
+        has_max = False
+        for key in ("max_tokens", "max_completion_tokens"):
+            if key in payload and isinstance(payload[key], (int, float)):
+                payload[key] = min(int(payload[key]), _MAX_COMPLETION_CAP)
+                has_max = True
+        if not has_max:
+            payload["max_tokens"] = _MAX_COMPLETION_CAP
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
                 f"{target_backend_url}/v1/chat/completions",
                 json=payload,
             )
+            if response.status_code >= 400:
+                _LOGGER.error(
+                    "vLLM backend returned %s for %s: %s",
+                    response.status_code, target_backend_url, response.text[:1000],
+                )
             response.raise_for_status()
             data = response.json()
 
@@ -106,10 +128,12 @@ class VLLMBackend(InferenceBackend):
         raw_token_ids = choice.get("token_ids")
         if isinstance(raw_token_ids, list):
             token_ids = raw_token_ids
-        elif self._tokenizer is not None and logprobs_data is not None:
-            token_ids = self._extract_token_ids_from_logprobs(logprobs_data)
-            if token_ids is None and content:
-                token_ids = self._tokenizer.encode(content, add_special_tokens=False)
+        elif self._tokenizer is not None and content:
+            token_ids = self._tokenizer.encode(content, add_special_tokens=False)
+            if isinstance(token_ids, list) and token_ids:
+                _LOGGER.debug("Extracted %d token_ids via tokenizer.encode", len(token_ids))
+            else:
+                token_ids = None
 
         return ModelResponse(
             content=content,

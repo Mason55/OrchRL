@@ -4,8 +4,6 @@ Extracts code from the kernel_gen agent's last turn, attempts to compile it,
 and returns a reward based on compilation success + content quality.
 
 Reward formula:
-    reward = r_compile + r_quality_bonus
-
     r_compile       = 1.0 if code compiles (valid Python AST), else 0.0
     r_quality_bonus = 0.2 if code contains triton/cuda/torch keywords, else 0.0
 """
@@ -18,14 +16,24 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_CODE_BLOCK_RE = re.compile(r"```(?:python)?\n(.*?)```", re.DOTALL)
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+_CODE_BLOCK_CLOSED_RE = re.compile(r"```(?:python)?\n(.*?)```", re.DOTALL)
+_CODE_BLOCK_OPEN_RE = re.compile(r"```(?:python)?\n(.*)", re.DOTALL)
+
+
+def _strip_thinking(text: str) -> str:
+    return _THINK_RE.sub("", text).strip()
 
 
 def _extract_code(response_text: str) -> str:
-    match = _CODE_BLOCK_RE.search(response_text)
+    text = _strip_thinking(response_text)
+    match = _CODE_BLOCK_CLOSED_RE.search(text)
     if match:
         return match.group(1).strip()
-    return response_text.strip()
+    match = _CODE_BLOCK_OPEN_RE.search(text)
+    if match:
+        return match.group(1).strip()
+    return text.strip()
 
 
 def _check_compile(code: str) -> bool:
@@ -58,6 +66,12 @@ def compute_reward(trajectory: Any) -> dict[str, Any]:
     r_compile = 1.0 if _check_compile(code) else 0.0
     r_quality = 0.2 if (r_compile and _check_has_kernel_content(code)) else 0.0
     final_reward = r_compile + r_quality
+
+    logger.info(
+        "[kernel_gen_reward] response_len=%d code_len=%d compile=%s quality=%s reward=%.1f first100=%r",
+        len(last_response), len(code), r_compile > 0, r_quality > 0, final_reward,
+        code[:100] if code else "<empty>",
+    )
 
     return {
         "agent_rewards": {role: final_reward for role in trajectory.agent_trajectories},

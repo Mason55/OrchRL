@@ -80,13 +80,24 @@ class MASLauncher:
         if env_vars:
             env.update(env_vars)
 
+        import logging
+        _launcher_log = logging.getLogger("orchrl.launcher")
+
+        log_dir = Path(self._work_dir or ".") / "logs" / "mas_subprocess"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        import time as _time
+        log_tag = f"{_time.time():.0f}_{os.getpid()}"
+        stderr_path = log_dir / f"mas_stderr_{log_tag}.log"
+        stderr_file = open(stderr_path, "w")
+        _launcher_log.info("MAS subprocess stderr → %s", stderr_path)
+
         return subprocess.Popen(
             command,
             shell=True,
             cwd=str(self._work_dir) if self._work_dir else None,
             env=env,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=stderr_file,
             start_new_session=True,
         )
 
