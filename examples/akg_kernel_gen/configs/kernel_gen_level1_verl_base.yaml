@@ -1,0 +1,148 @@
+# kernel_gen_level1_verl_base.yaml
+# Single-model base PPO training for AKG kernel generation.
+# Uses verl RayPPOTrainer directly + orchrl.agent_trajectory_engine for rollout.
+# No multi_agents_ppo_trainer dependency.
+
+defaults:
+  - _self_
+
+resource:
+  nnodes: 1
+  n_gpus_per_node: 8
+  trust_remote_code: true
+
+model:
+  path: /data1/models/Qwen/Qwen3-4B-Instruct-2507
+  name: kernel_gen_model
+
+training:
+  total_training_steps: 20
+  train_batch_size: 4
+  train_sample_num: 4
+  max_prompt_length: 8192
+  max_response_length: 6144
+  project_name: orchrl
+  experiment_name: kernel_gen_level1_qwen3_4b_base
+  logger:
+    - console
+    - wandb
+  ray_wait_register_center_timeout: 300
+  val_freq: 9999
+  mate:
+    roles: [kernel_gen]
+    role_policy_mapping:
+      kernel_gen: kernel_gen_model
+    batch_size: ${training.train_batch_size}
+    n_samples_per_prompt: ${training.train_sample_num}
+    max_concurrent_episodes: 4
+    timeout: 180
+    backend_timeout: 120
+    credit_assignment: all_turns
+    mas_work_dir: /data1/lmy/agentic-rl/OrchRL
+    mas_command_template: >-
+      python /data1/lmy/agentic-rl/OrchRL/examples/akg_kernel_gen/mas_entry/akg_rl_entry.py
+      --config {config_path}
+      --task {prompt}
+    config_template_path: /data1/lmy/agentic-rl/OrchRL/examples/akg_kernel_gen/configs/akg_config_template.yaml
+    prompt_loader:
+      source_type: jsonl
+      path: /data1/lmy/agentic-rl/OrchRL/data/kernelbench_level1.jsonl
+      prompt_keys: [prompt, question, query, problem, input]
+      expected_keys: [expected_answer, answer]
+    reward:
+      provider: orchrl.reward.kernel.kernel_gen_reward:compute_reward
+
+ppo_trainer_config:
+  filter_method: uid
+  filter_ratio: 0.0
+  data:
+    max_prompt_length: ${training.max_prompt_length}
+    max_response_length: ${training.max_response_length}
+    train_batch_size: ${training.train_batch_size}
+    train_files: /data1/lmy/agentic-rl/OrchRL/data/kernelbench_level1.json
+    val_files: /data1/lmy/agentic-rl/OrchRL/data/kernelbench_level1.json
+    filter_overlong_prompts: false
+  reward:
+    num_workers: 1
+    reward_manager:
+      name: naive
+      source: null
+      module:
+        path: null
+        name: null
+    custom_reward_function:
+      path: null
+      name: compute_score
+  algorithm:
+    adv_estimator: grpo
+    use_kl_in_reward: false
+    kl_penalty: kl
+    gamma: 1.0
+    lam: 1.0
+    norm_adv_by_std_in_grpo: true
+    kl_ctrl:
+      type: fixed
+      kl_coef: 0.001
+  actor_rollout_ref:
+    hybrid_engine: true
+    model:
+      _target_: verl.workers.config.model.HFModelConfig
+      path: ${model.path}
+    actor:
+      strategy: fsdp
+      ppo_mini_batch_size: 8
+      ppo_micro_batch_size: null
+      ppo_micro_batch_size_per_gpu: 1
+      ppo_max_token_len_per_gpu: 14336
+      ppo_epochs: 1
+      fsdp_config:
+        param_offload: true
+        optimizer_offload: true
+      optim:
+        lr: 1.0e-6
+    ref:
+      log_prob_micro_batch_size: null
+      log_prob_micro_batch_size_per_gpu: 1
+      log_prob_max_token_len_per_gpu: 14336
+      fsdp_config:
+        param_offload: true
+    rollout:
+      name: vllm
+      n: 1
+      temperature: 0.6
+      prompt_length: ${training.max_prompt_length}
+      response_length: ${training.max_response_length}
+      tensor_model_parallel_size: 1
+      gpu_memory_utilization: 0.6
+      max_model_len: 16384
+      max_num_batched_tokens: 8192
+      max_num_seqs: 16
+      enforce_eager: true
+      free_cache_engine: true
+      load_format: auto
+      log_prob_micro_batch_size: null
+      log_prob_micro_batch_size_per_gpu: 1
+      n_gpus_per_node: ${resource.n_gpus_per_node}
+      multi_turn:
+        enable: false
+      mtp:
+        _target_: verl.workers.config.MtpConfig
+        enable: false
+        enable_rollout: false
+        enable_train: false
+      qat:
+        enable: false
+    trainer:
+      n_gpus_per_node: ${resource.n_gpus_per_node}
+      n_training_gpus_per_node: ${resource.n_gpus_per_node}
+  trainer:
+    project_name: ${training.project_name}
+    experiment_name: ${training.experiment_name}
+    default_local_dir: checkpoints/kernel_gen_level1_qwen3_4b_base
+    total_training_steps: ${training.total_training_steps}
+    total_epochs: 1
+    device: cuda
+    rollout_data_dir: null
+    logger:
+      - console
+      - wandb
