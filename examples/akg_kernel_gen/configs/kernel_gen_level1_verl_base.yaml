@@ -1,7 +1,7 @@
 # kernel_gen_level1_verl_base.yaml
 # Single-model base PPO training for AKG kernel generation.
 # Uses verl RayPPOTrainer directly + orchrl.agent_trajectory_engine for rollout.
-# No multi_agents_ppo_trainer dependency.
+# Maintained config for the AKG verl_base example.
 
 defaults:
   - _self_

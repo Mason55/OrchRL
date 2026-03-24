@@ -5,4 +5,5 @@ akg-agents>=2.0.0
 # OrchRL trajectory library (install from local source)
 # pip install -e /path/to/OrchRL
 
+verl==0.7.1
 pyyaml>=6.0

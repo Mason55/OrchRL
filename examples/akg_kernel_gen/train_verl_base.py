@@ -1,7 +1,7 @@
 """Single-model base PPO training entry point for AKG kernel generation.
 
-This script replaces multi_agents_ppo_trainer with a direct verl RayPPOTrainer
-approach, using orchrl.agent_trajectory_engine for external rollout collection.
+This script runs the maintained AKG example training path using verl RayPPOTrainer
+and orchrl.agent_trajectory_engine for external rollout collection.
 
 Usage:
     python -m examples.akg_kernel_gen.train_verl_base \
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Batch construction helpers (extracted from multi_agents_ppo_trainer)
+# Batch construction helpers for the verl training loop
 # ---------------------------------------------------------------------------
 
 def _build_tensor_batch(batch, tokenizer, max_prompt_length: int, max_response_length: int):
