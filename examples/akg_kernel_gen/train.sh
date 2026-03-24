@@ -22,10 +22,16 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
   exit 1
 fi
 
-export WANDB_MODE=offline
+export WANDB_API_KEY="${WANDB_API_KEY:-}"
 export HYDRA_FULL_ERROR=1
 export NCCL_IB_DISABLE=1
 export NCCL_NET_GDR_LEVEL=0
+
+if [[ -n "$WANDB_API_KEY" ]]; then
+  export WANDB_MODE="${WANDB_MODE:-online}"
+else
+  export WANDB_MODE=offline
+fi
 
 cd "$REPO_ROOT"
 
@@ -35,6 +41,7 @@ echo "[INFO] ========================================"
 echo "[INFO] Example dir: $EXAMPLE_DIR"
 echo "[INFO] Config: $CONFIG_NAME"
 echo "[INFO] CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
+echo "[INFO] Wandb mode: $WANDB_MODE"
 echo "[INFO] Log path: $LOG_PATH"
 
 python3 -m examples.akg_kernel_gen.train_verl_base \
