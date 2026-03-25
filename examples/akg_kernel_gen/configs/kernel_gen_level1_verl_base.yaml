@@ -16,11 +16,11 @@ model:
   name: kernel_gen_model
 
 training:
-  total_training_steps: 20
+  total_training_steps: 5
   train_batch_size: 4
   train_sample_num: 4
-  max_prompt_length: 8192
-  max_response_length: 6144
+  max_prompt_length: 10240
+  max_response_length: 4096
   project_name: orchrl
   experiment_name: kernel_gen_level1_qwen3_4b_base
   logger:
